@@ -38,7 +38,6 @@ const std::string MOVE_RIGHT_UP	  = "assets/img/dark_spirit/Minion roxo costa.pn
 // Sounds
 
 const std::string SPRT_HIT_SOUND	= "assets/audio/sons/spirit/hit.ogg";
-const std::string SPRT_B_ATK_SOUND	= "assets/audio/sons/spirit/ataque.ogg";
 const std::string SPRT_DEATH		= "assets/audio/sons/spirit/morte.ogg";
 const std::string SPRT_SHOOT_SOUND	= "assets/audio/sons/spirit/disparo.ogg";
 
@@ -86,7 +85,7 @@ void Dark_Spirit::Update(float dt) {
 			moveTimer.Update(dt);
             if(moveTimer.Get() < SPRT_FREE_TIME_MOVEMENT && !((yawaraPos - associated.box.Center()).Modulo() <= SPRT_DIST_DETECT_YAWARA + rangeOffset)){
                 while(speed == Vec2{0,0}){
-                    speed = Vec2{rand() % 2 ,rand() % 2 };
+                    speed = Vec2(rand() % 2, rand() % 2);
                     speed.x *= SPRT_SPEED;
                     speed.y *= SPRT_SPEED;
                     if(speed.x == speed.y)

@@ -12,7 +12,9 @@
 #include <stdbool.h>
 #include <memory>
 #include <vector>
+#ifndef _USE_MATH_DEFINES
 #define _USE_MATH_DEFINES
+#endif
 #include <math.h>
 
 class StageState : public State

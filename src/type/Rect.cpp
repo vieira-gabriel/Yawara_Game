@@ -71,12 +71,3 @@ void Rect::operator-=(const Vec2 &vector)
     this->x -= vector.x;
     this->y -= vector.y;
 }
-
-void Rect::operator=(const Rect &rect)
-{
-
-    this->x = rect.x;
-    this->y = rect.y;
-    this->w = rect.w;
-    this->h = rect.h;
-}
