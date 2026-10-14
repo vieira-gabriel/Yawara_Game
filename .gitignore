@@ -1,11 +1,13 @@
-bin/
-
-dep/
+/bin/
+/dep/
+/build/
+/dist/
+/lib/
 
 /yawara
+/yawara.exe
+/*.dll
 
 *.swp
 
 .vscode
-
-*.exe
