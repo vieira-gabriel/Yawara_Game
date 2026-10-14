@@ -38,7 +38,6 @@ const std::string MOVE_RIGHT_UP	  = "assets/img/dark_spirit/Minion roxo costa.pn
 // Sounds
 
 const std::string SPRT_HIT_SOUND	= "assets/audio/sons/spirit/hit.ogg";
-const std::string SPRT_B_ATK_SOUND	= "assets/audio/sons/spirit/ataque.ogg";
 const std::string SPRT_DEATH		= "assets/audio/sons/spirit/morte.ogg";
 const std::string SPRT_SHOOT_SOUND	= "assets/audio/sons/spirit/disparo.ogg";
 
