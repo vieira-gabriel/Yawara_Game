@@ -48,7 +48,7 @@ private:
 	SDL_Color bgColor;
 	Timer time;
 	float period;
-	uint count;
+	unsigned int count;
 
 	void RemakeTexture();
 };
