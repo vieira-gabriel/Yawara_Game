@@ -20,5 +20,4 @@ public:
 	void operator+=(const Vec2 &vector);
 	void operator+=(const Rect &rect);
 	void operator-=(const Vec2 &vector);
-	void operator=(const Rect &rect);
 };

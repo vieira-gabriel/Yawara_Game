@@ -86,7 +86,7 @@ void Dark_Spirit::Update(float dt) {
 			moveTimer.Update(dt);
             if(moveTimer.Get() < SPRT_FREE_TIME_MOVEMENT && !((yawaraPos - associated.box.Center()).Modulo() <= SPRT_DIST_DETECT_YAWARA + rangeOffset)){
                 while(speed == Vec2{0,0}){
-                    speed = Vec2{rand() % 2 ,rand() % 2 };
+                    speed = Vec2(rand() % 2, rand() % 2);
                     speed.x *= SPRT_SPEED;
                     speed.y *= SPRT_SPEED;
                     if(speed.x == speed.y)

@@ -99,7 +99,7 @@ void Text::RemakeTexture() {
 	}
 
 	// Cria textura nova.
-	SDL_Surface* tmp;
+	SDL_Surface* tmp = nullptr;
 	switch (style) {
 		case SOLID:
 			tmp = TTF_RenderText_Solid(font.get(), text.c_str(), color);
@@ -112,6 +112,10 @@ void Text::RemakeTexture() {
 		case BLENDED:
 			tmp = TTF_RenderText_Blended(font.get(), text.c_str(), color);
 		break;
+	}
+	if (tmp == nullptr) {
+		std::cout << "Falha em renderizar texto: " << TTF_GetError() << "\n";
+		return;
 	}
 	texture = SDL_CreateTextureFromSurface(Game::GetInstance().GetRenderer(), tmp);
 	associated.box.w = tmp->w;
