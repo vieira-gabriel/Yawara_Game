@@ -16,9 +16,10 @@ Estas instruções vão ensinar a como compilar e rodar o jogo 'Yawara' desenvol
 
 ### Pré-requisitos
 
-Para rodar o programa, os seguintes fazem-se necessários:
+Para compilar o programa, os seguintes fazem-se necessários:
 ```
-g++ 4.7 ou superior
+g++ com suporte a C++11
+make
 SDL2
 SDL2_image
 SDL2_mixer
@@ -27,80 +28,49 @@ SDL2_ttf
 
 ### Instalando
 
-#### em sistema operacional Linux (via terminal):
+#### Linux (via terminal)
 
-* g++ (distrubuição Debian):
+* Debian/Ubuntu:
     ```
-    sudo apt-get install build-essencial
-    ```
-
-* g++ (distribuição Arch):
-    ```
-    sudo pacman -S base-devel
+    sudo apt-get install build-essential pkg-config libsdl2-dev libsdl2-image-dev libsdl2-mixer-dev libsdl2-ttf-dev
     ```
 
-* SDL2 e suas dependências (Debian):
+* Arch:
     ```
-    sudo apt-get install libsdl2-dev libsdl2-image-dev libsdl2-mixer-dev libsdl2-ttf
-    ```
-
-* SDL2 e suas dependências (Arch):
-    ```
-    sudo pacman -S sdl2 sdl2-image sdl2-mixer sdl2-ttf
+    sudo pacman -S base-devel sdl2 sdl2_image sdl2_mixer sdl2_ttf
     ```
 
-#### em sistema operacional Windows:
-* Primeiramente, precisa-se de um programa de terminal
-    * TDM-GCC é recomendado: 
-    [TDM-GCC](http://tdm-gcc.tdragon.net/download)
-        * durante a intalação, adicione ao PATH
-        * TDM-GCC vem com compiladores de C e C++
+#### Windows (MSYS2)
 
-* SDL2:
-    * Baixe SDL2-devel-2.x.x-mingw.tar.gz (ou SDL2-devel-2.x.x-VC.zip se você usa Visual Code) do [link](http://libsdl.org/download-2.0.php)
-    * Extraia o arquivo zipado e copie as pastas:
+1. Instale o [MSYS2](https://www.msys2.org/) no caminho padrão `C:\msys64`.
+2. Abra o terminal **MSYS2 MINGW64** e instale o compilador e as bibliotecas:
     ```
-    bin
-    include
-    lib
+    pacman -S make mingw-w64-x86_64-gcc mingw-w64-x86_64-SDL2 mingw-w64-x86_64-SDL2_image mingw-w64-x86_64-SDL2_mixer mingw-w64-x86_64-SDL2_ttf
     ```
-    para
-    ```
-    C:\SDL-2.x.x
-    ```
-* SDL2 image, mixer e ttf:
+3. Os comandos de compilação devem ser executados num shell `sh`, como o terminal MSYS2 MINGW64 ou o Git Bash.
 
-    * use os links:
-        * [SDL_image](http://www.libsdl.org/projects/SDL_image/)
-        * [SDL_mixer](http://www.libsdl.org/projects/SDL_mixer/)
-        * [SDL_ttf](http://www.libsdl.org/projects/SDL_ttf/)
-
-    * dessas páginas, baixe os arquivos terminados em [...]-devel-2.x.x-mingw.zip
-    * assim como com a SDL2, extraia os arquivos zipados e copie as pastas
-
-    ```
-    bin
-    include
-    lib
-    ```
-    para
-    ```
-    C:\SDL-2.x.x
-    ```
-    * fundindo com as pastas previamente instaladas
-    * abra a pasta "lib", que contém todos os arquivos .DLL
-    ```
-    C:\SDL-2.x.x\bin
-    ```
-    * copie estes arquivos .DLL para  a pasta que contém o executável (.exe)
+O Makefile usa o `g++` e as bibliotecas de `C:/msys64/mingw64`. Para usar outra instalação, passe o caminho com `make SDL2_PREFIX=<caminho>`. Não misture ambientes do MSYS2 (por exemplo, `ucrt64` e `mingw64`), porque os runtimes são incompatíveis.
 
 ## Compilando e jogando
 
-Abra o diretório de instalação (no Terminal, caso use Linux ou no TDM-GCC case use Windows) e compile com o comando
+Na pasta do projeto, compile com o comando
 ```
 make
 ```
-Feito isso, rode o jogo com o comando
+
+Os alvos disponíveis são:
+
+| Comando | Resultado |
+|---|---|
+| `make` ou `make release` | Compila a versão otimizada. No Windows, o jogo abre sem janela de console. |
+| `make debug` | Compila a versão de depuração. No Windows, o jogo abre com janela de console para exibir mensagens de erro. |
+| `make run` | Compila e executa o jogo. |
+| `make dist` | Gera a pasta `dist/yawara` com o executável, as DLLs (no Windows) e a pasta `assets`, pronta para ser copiada para outro computador. |
+| `make clean` | Apaga os arquivos gerados. Execute antes de trocar entre `release` e `debug`. |
+
+No Windows, o `make` copia para a pasta do projeto as DLLs da SDL2 de que o executável precisa. Assim, `yawara.exe` abre com duplo clique, sem alterar o PATH.
+
+O jogo procura a pasta `assets` ao lado do executável. Por isso, ele pode ser aberto a partir de qualquer diretório:
 ```
 ./yawara
 ```
@@ -164,6 +134,7 @@ Câmera:
 * <kbd>F1</kbd>: eleva vida (HP), defesa e dano de Yawara;
 * <kbd>F2</kbd>: retorna stats (vida, defesa e dano) aos originais;
 * <kbd>F3</kbd>: suicídio
+* <kbd>F5</kbd>: zera a vida do Capelobo (chefe da primeira fase)
 
 ### Jogando
 
