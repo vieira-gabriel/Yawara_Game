@@ -1,11 +1,12 @@
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-# Assume-se uma distribuição Linux como sistema operacional padrão
+# Assume-se uma distribuição Linux como sistema operacional padrão.
+# No Windows, o build usa o MSYS2 (ambiente mingw64) e deve ser chamado a partir de um shell sh (MSYS2 ou Git Bash).
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 #O compilador
 COMPILER ?= g++
 # Comando para remover pastas
-RMDIR = rm -rdf
+RMDIR = rm -rf
 #Comando para remover arquivos
 RM = rm -f
 
@@ -14,13 +15,10 @@ DEP_FLAGS = -M -MT $@  -MT $(BIN_PATH)/$(*F).o -MP -MF $@
 #Bibliotecas a serem linkadas
 LIBS = -lm
 
-# SDL2 options: use SDL2_PREFIX or SDL_PREFIX to override autodetection
-SDL2_PREFIX ?= $(SDL_PREFIX)
-SDL_PATHS ?= $(SDL2_PREFIX) C:/msys64/mingw64 C:/SDL2/x86_64-w64-mingw32 C:/Tools/msys64/mingw64 /usr/local /usr
 PKG_CONFIG ?= pkg-config
-SDL_CFLAGS ?=
-SDL_LIBS ?=
-LINK_PATH ?=
+SDL_CFLAGS :=
+SDL_INC_PATHS :=
+LINK_PATH :=
 
 #Caminho dos includes
 INC_PATHS = $(addprefix -I,$(INC_PATH)) $(SDL_CFLAGS) $(addprefix -I,$(SDL_INC_PATHS))
@@ -32,13 +30,12 @@ DFLAGS = -ggdb -O0 -DDEBUG
 #Diretivas extras para release
 RFLAGS = -O3 -mtune=native
 
-INC_PATH = $(sort $(dir $(wildcard include/*/*/)))
-INC_PATH += include/
-SRC_PATH = $(sort $(dir $(wildcard src/*/*/)))
-SRC_PATH += src/
+INC_PATH = $(sort $(wildcard include/*/)) include/
+SRC_PATH = $(sort $(wildcard src/*/)) src/
 BIN_PATH = build/bin
 DEP_PATH = build/dep
 BUILD_PATH = build/
+DIST_PATH = dist/yawara
 
 # Uma lista de arquivos por extensão:
 CPP_FILES = $(wildcard $(addsuffix *.cpp, $(SRC_PATH)))
@@ -50,36 +47,28 @@ OBJ_FILES = $(addprefix $(BIN_PATH)/,$(notdir $(CPP_FILES:.cpp=.o)))
 # Nome do executável
 EXEC = yawara
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-# Caso o sistema seja Windows
+# Caso o sistema seja Windows (MSYS2 mingw64)
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 ifeq ($(OS),Windows_NT)
 
-#Comando para remover um diretório recursivamente
-RMDIR = cmd /C rmdir /s /q
+# Instalação do MSYS2 mingw64 que contém o g++ e as bibliotecas SDL2.
+# Use SDL2_PREFIX=<caminho> para apontar outra instalação.
+SDL2_PREFIX ?= C:/msys64/mingw64
 
-#comando para deletar um único arquivo
-RM = cmd /C del /q
-
-
-# Use the shared SDL_PATHS setting above and add include paths for Windows builds.
-SDL_INC_PATHS += $(addsuffix /include,$(SDL_PATHS))
-LINK_PATH := $(addprefix -L,$(addsuffix /lib,$(SDL_PATHS)))
-FLAGS += -mwindows
+SDL_INC_PATHS := $(SDL2_PREFIX)/include
+LINK_PATH := -L$(SDL2_PREFIX)/lib
 FLAGS += -D_USE_MATH_DEFINES
-DFLAGS += -mconsole
-SDL_LIBS := -lSDL2 -lSDL2_image -lSDL2_mixer -lSDL2_ttf
-LIBS := -lmingw32 -lSDL2main $(SDL_LIBS) $(LIBS)
+RELEASE_LDFLAGS = -mwindows
+DEBUG_LDFLAGS = -mconsole
+LIBS := -lmingw32 -lSDL2main -lSDL2 -lSDL2_image -lSDL2_mixer -lSDL2_ttf $(LIBS)
 
 #nome do executável
 EXEC := $(EXEC).exe
 
-# Detect MSYS2 mingw-w64 compiler (prefer it on Windows if available)
-MSYS_MINGW_GXX := $(wildcard C:/msys64/mingw64/bin/x86_64-w64-mingw32-g++.exe)
-ifeq ($(MSYS_MINGW_GXX),)
-MSYS_MINGW_GXX := $(wildcard C:/msys64/mingw64/bin/g++.exe)
-endif
-ifneq ($(MSYS_MINGW_GXX),)
-COMPILER := $(MSYS_MINGW_GXX)
+# Usa o g++ da mesma instalação das bibliotecas, para não misturar runtimes (ucrt64 x mingw64).
+PREFIX_GXX := $(wildcard $(SDL2_PREFIX)/bin/g++.exe)
+ifneq ($(PREFIX_GXX),)
+COMPILER := $(PREFIX_GXX)
 endif
 
 else
@@ -93,17 +82,13 @@ UNAME_S := $(shell uname -s)
 ifeq ($(UNAME_S), Darwin)
 LIBS = -lm -framework SDL2 -framework SDL2_image -framework SDL2_mixer -framework SDL2_ttf
 else
-# Linux/Unix fallback: prefer pkg-config, use SDL_PATHS if not available
-PKG_CONFIG_PATH := $(shell command -v $(PKG_CONFIG) 2>/dev/null)
-ifneq ($(PKG_CONFIG_PATH),)
+#-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+# Caso o sistema seja Linux: usa pkg-config e, na falta dele, os caminhos padrão
+#-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 SDL_CFLAGS := $(shell $(PKG_CONFIG) --cflags sdl2 SDL2_image SDL2_mixer SDL2_ttf 2>/dev/null)
-SDL_LIBS := $(shell $(PKG_CONFIG) --libs sdl2 SDL2_image SDL2_mixer SDL2_ttf 2>/dev/null)
-endif
 ifneq ($(SDL_CFLAGS),)
-LIBS += $(SDL_LIBS)
+LIBS += $(shell $(PKG_CONFIG) --libs sdl2 SDL2_image SDL2_mixer SDL2_ttf 2>/dev/null)
 else
-SDL_INC_PATHS ?= $(addsuffix /include,$(SDL_PATHS))
-LINK_PATH ?= $(addprefix -L,$(addsuffix /lib,$(SDL_PATHS)))
 LIBS += -lSDL2 -lSDL2_image -lSDL2_mixer -lSDL2_ttf
 endif
 endif
@@ -111,14 +96,17 @@ endif
 ################################################################################################################################################################################
 
 .PRECIOUS: $(DEP_FILES)
-.PHONY: release debug clean folders help
+.PHONY: all release debug clean folders run dist dlls help
 
 #Regra geral
-all:	$(EXEC)
+all: release
 
 #Gera o executável
 $(EXEC): $(OBJ_FILES)
-	$(COMPILER)  -o $@ $^ $(LINK_PATH) $(LIBS) $(FLAGS)
+	$(COMPILER)  -o $@ $^ $(LINK_PATH) $(LIBS) $(FLAGS) $(LDFLAGS)
+ifeq ($(OS),Windows_NT)
+	@$(MAKE) --no-print-directory dlls
+endif
 
 #Gera os arquivos objetos
 $(BIN_PATH)/%.o: $(DEP_PATH)/%.d | folders
@@ -130,42 +118,55 @@ $(DEP_PATH)/%.d: $$(filter $$(addsuffix $$*.cpp, $$(SRC_PATH)), $$(CPP_FILES)) |
 	$(COMPILER) $(INC_PATHS) $(subst //,/,$(filter %/$*.cpp, $(CPP_FILES))) $(DEP_FLAGS) $(FLAGS)
 
 clean:
-		-$(RMDIR) $(DEP_PATH)
-		-$(RMDIR) $(BIN_PATH)
-		-$(RMDIR) $(BUILD_PATH)
-		-$(RM) $(EXEC)
+	-$(RMDIR) $(BUILD_PATH) dist
+	-$(RM) $(EXEC) *.dll
 
 release: FLAGS += $(RFLAGS)
+release: LDFLAGS += $(RELEASE_LDFLAGS)
 release: $(EXEC)
 
 debug: FLAGS += $(DFLAGS)
+debug: LDFLAGS += $(DEBUG_LDFLAGS)
 debug: $(EXEC)
 
 folders:
-ifeq ($(OS), Windows_NT)
-	@for %%D in ($(DEP_PATH) $(BIN_PATH) $(INC_PATH) $(SRC_PATH)) do @if not exist "%%D" mkdir "%%D"
-else
-	@mkdir -p $(DEP_PATH) $(BIN_PATH) $(INC_PATH) $(SRC_PATH)
+	@mkdir -p $(DEP_PATH) $(BIN_PATH)
+
+# Copia para a raiz as DLLs (SDL2 e dependências) que o executável carrega, para rodar sem alterar o PATH.
+dlls:
+ifeq ($(OS),Windows_NT)
+	@PATH="$$(cygpath -u '$(SDL2_PREFIX)')/bin:$$PATH" ldd $(EXEC) \
+		| awk '{print $$3}' | grep -i "^$$(cygpath -u '$(SDL2_PREFIX)')/bin/" \
+		| xargs -I{} cp -u {} .
+	@echo "DLLs copiadas para a raiz do projeto."
 endif
+
+#Executa o jogo
+run: $(EXEC)
+	./$(EXEC)
+
+#Gera uma pasta autocontida com executável, DLLs e assets
+dist: $(EXEC)
+	@mkdir -p $(DIST_PATH)
+	cp $(EXEC) $(DIST_PATH)/
+ifeq ($(OS),Windows_NT)
+	cp *.dll $(DIST_PATH)/
+endif
+	cp -r assets $(DIST_PATH)/
+	@echo "Pacote gerado em $(DIST_PATH)"
 
 #Regra para debug
 print-% : ; @echo $* = $($*)
 
 help:
-ifeq ($(OS), Windows_NT)
-	@echo.
-endif
-	@echo Available targets:
-	@echo - release:	Builds the release version
-	@echo - debug:		Builds the debug version
-	@echo - clean:		Cleans the generated files
-	@echo - folders:	Generates project directories
-	@echo - help:		Shows this help
-	@echo - SDL2_PREFIX=<path> Use custom SDL2 installation prefix on Windows or Linux
-	@echo - PKG_CONFIG=<tool> Use a custom pkg-config executable on Linux
-ifeq ($(OS), Windows_NT)
-	@echo.
-endif
+	@echo "Available targets:"
+	@echo "- release:  Builds the release version (default)"
+	@echo "- debug:    Builds the debug version (console on Windows)"
+	@echo "- run:      Builds and runs the game"
+	@echo "- dist:     Creates dist/yawara with executable, DLLs and assets"
+	@echo "- clean:    Cleans the generated files"
+	@echo "- SDL2_PREFIX=<path>  Custom MSYS2 mingw64 prefix on Windows (default C:/msys64/mingw64)"
+	@echo "- PKG_CONFIG=<tool>   Custom pkg-config executable on Linux"
 
 .SECONDEXPANSION:
 -include $$(DEP_FILES)
